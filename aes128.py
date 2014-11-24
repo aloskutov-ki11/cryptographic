@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-from collections import deque
-
 ''' функция разбора аргументов из командной строки '''
 def parseArgs():    
     cmd = 'first inputFIleName outputFileName keyFile {-c,-d}'
@@ -40,11 +38,7 @@ def isThisFile(fName):
     else:
         return False
 		
-''' дополнение исходного текста, чтобы его длина была кратна 16-ти байтам '''
-def complete(inText, d):
-    while len(inText) % d != 0:
-        inText += '0'
-    return inText
+
     
 ''' нелинейная замена одного байта '''
 def SubOneBytes(byte):
@@ -274,13 +268,20 @@ def decryptBlock(Input, wKeys):
     State = invShiftRows(State)
     State = invSubBytes(State)
     State = AddRoundKey(State, wKeys[0*4:(0+1)*4])
-    
+        
     return State 
 
+''' дополнение исходного текста, чтобы его длина была кратна 16-ти байтам '''
+def complete(inText, d):
+    count = len(inText) % d
+    while len(inText) % d != 0:
+        inText += chr(255)
+    return inText
+    
 ''' Удаление лишних нулей в конце строки '''   
 def delZero(outText):
     i = len(outText) - 1
-    while outText[i] == '0':
+    while ord(outText[i]) == 255:
         outText = outText[0:i]
         i -= 1
     
@@ -347,7 +348,9 @@ def main():
        
         State = retFunc(mode, State, wKeys)
         outText = MassToText(State)
-        if mode == '-d': outText = delZero(outText)
+        
+        
+        if (mode == '-d') and ( _iter == Nblocks-1): outText = delZero(outText)
         
         outF.write(outText)
         outText = ''
@@ -357,18 +360,3 @@ def main():
 
 if __name__ == "__main__": 
     main()
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
