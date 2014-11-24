@@ -268,24 +268,24 @@ def decryptBlock(Input, wKeys):
     State = invShiftRows(State)
     State = invSubBytes(State)
     State = AddRoundKey(State, wKeys[0*4:(0+1)*4])
-        
+    
+    #удаление нулей в конце
+    
     return State 
 
 ''' дополнение исходного текста, чтобы его длина была кратна 16-ти байтам '''
 def complete(inText, d):
-    count = len(inText) % d
+    i = 0
     while len(inText) % d != 0:
         inText += chr(255)
+        i += 1
+    #добавляем байт в самый конец, который говорит сколько было добавлено выравнивающих символов в конец сообщения
+    inText += chr(i)
     return inText
     
 ''' Удаление лишних нулей в конце строки '''   
-def delZero(outText):
-    i = len(outText) - 1
-    while ord(outText[i]) == 255:
-        outText = outText[0:i]
-        i -= 1
-    
-    return outText   
+def delZero(outText, count):
+    return outText[0:len(outText)-count]  
 
 ''' Возвращает двумерный массив в виде строки '''     
 def MassToText(Mass):
@@ -328,9 +328,12 @@ def main():
 	    return
 
 
-    #Дополняем текст до необходимой кратности. В конце дописываем нули
-    inText = complete(inText, 16)
+    if (mode == '-c'):
+        inText = complete(inText, 16)
     
+    countCmplt = inText[len(inText)-1:len(inText)]
+    inText = inText[0:len(inText)-1]
+
     #формируем массив раундовых ключей
     wKeys = KeyExpansion([ord(x) for x in key])
 
@@ -350,11 +353,13 @@ def main():
         outText = MassToText(State)
         
         
-        if (mode == '-d') and ( _iter == Nblocks-1): outText = delZero(outText)
+        if (mode == '-d') and ( _iter == Nblocks-1): outText = delZero(outText, ord(countCmplt))
         
         outF.write(outText)
         outText = ''
         _iter += 1
+      
+    if (mode == '-c'): outF.write(countCmplt)
         
     outF.close()   
 
